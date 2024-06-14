@@ -125,11 +125,11 @@
                     </div>
                     <div class="mb-3">
                         <label for="panjang" class="form-label">Panjang</label>
-                        <input type="text" class="form-control" id="panjang" name="panjang" placeholder="Masukkan Panjang">
+                        <input type="text" class="form-control" id="panjang" name="panjang" placeholder="Panjang Jalan (KM)">
                     </div>
                     <div class="mb-3">
                         <label for="lebar" class="form-label">Lebar</label>
-                        <input type="text" class="form-control" id="lebar" name="lebar" placeholder="Masukkan Lebar">
+                        <input type="text" class="form-control" id="lebar" name="lebar" placeholder="Lebar Jalan (M)">
                     </div>
                     <div class="mb-3">
                         <label for="eksisting_id" class="form-label">Eksisting ID</label>
@@ -184,6 +184,8 @@
             polylinePoints.push(latlng);
             updatePolyline();
             updateEncodedPath();
+            updatePanjang();
+            updateLebar();
         });
 
         mymap.on('contextmenu', function(event) {
@@ -191,6 +193,8 @@
                 polylinePoints.pop();
                 updatePolyline();
                 updateEncodedPath();
+                updatePanjang();
+                updateLebar();
             }
         });
 
@@ -199,6 +203,8 @@
             polylinePoints = polyline.getLatLngs();
             updatePolyline();
             updateEncodedPath();
+            updatePanjang();
+            updateLebar();
         });
 
         // Function to update polyline and markers
@@ -211,7 +217,7 @@
                 var marker = L.marker(point, { draggable: true }).addTo(mymap);
                 markers.push(marker);
 
-                marker.bindPopup("Latitude: " + point.lat + "<br>Longitude: " + point.lng).openPopup();
+                marker.bindPopup("Latitude: " + point.lat + "<br>Longitude: " + point.lng);
 
                 marker.on('drag', function(event) {
                     var newPosition = event.target.getLatLng();
@@ -220,6 +226,8 @@
                     polyline.setLatLngs(polylinePoints);
                     marker.getPopup().setContent("Latitude: " + newPosition.lat + "<br>Longitude: " + newPosition.lng).openPopup();
                     updateEncodedPath();
+                    updatePanjang();
+                    updateLebar();
                 });
             });
         }
@@ -283,6 +291,28 @@
             }
             encoded += String.fromCharCode(sgnNum + 63);
             return encoded;
+        }
+
+        // Function to update the length of the polyline in the form
+        function updatePanjang() {
+            var panjang = calculatePolylineLength(polylinePoints);
+            document.getElementById('panjang').value = panjang.toFixed(3); // Display the length in kilometers with 3 decimal places
+        }
+
+        // Function to calculate the length of a polyline in kilometers
+        function calculatePolylineLength(points) {
+            var length = 0;
+            for (var i = 1; i < points.length; i++) {
+                var p1 = points[i - 1];
+                var p2 = points[i];
+                length += p1.distanceTo(p2) / 1000; // Convert meters to kilometers
+            }
+            return length;
+        }
+
+        // Function to update the width of the road in the form
+        function updateLebar() {
+            var lebar = document.getElementById('lebar').value;
         }
     </script>
 </body>
