@@ -99,15 +99,9 @@
     <aside id="sidebar" class="sidebar">
         <ul class="sidebar-nav" id="sidebar-nav">
             <li class="nav-item">
-                <a class="nav-link " href="{{ route('layout') }}">
-                    <i class="bi bi-gear"></i>
-                    <span>Home</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <button id="get-ruas-jalan" class="btn btn-success nav-link">
+                <button id="click-me" class="btn btn-success nav-link">
                     <i class="bi bi-geo-alt"></i>
-                    <span>GET RUAS JALAN</span>
+                    <span>CLICK ME!</span>
                 </button>
             </li>
             <li class="nav-item">
@@ -189,12 +183,14 @@
             var latlng = event.latlng;
             polylinePoints.push(latlng);
             updatePolyline();
+            updateEncodedPath();
         });
 
         mymap.on('contextmenu', function(event) {
             if (polylinePoints.length > 0) {
                 polylinePoints.pop();
                 updatePolyline();
+                updateEncodedPath();
             }
         });
 
@@ -202,21 +198,28 @@
         polyline.on('edit', function(event) {
             polylinePoints = polyline.getLatLngs();
             updatePolyline();
+            updateEncodedPath();
         });
 
         // Function to update polyline and markers
         function updatePolyline() {
             clearMap();
 
-            polyline = L.polyline(polylinePoints, { color: 'blue', draggable: true }).addTo(mymap);
+            polyline = L.polyline(polylinePoints, { color: 'red', draggable: true }).addTo(mymap);
 
             polylinePoints.forEach(function(point, index) {
                 var marker = L.marker(point, { draggable: true }).addTo(mymap);
                 markers.push(marker);
 
+                marker.bindPopup("Latitude: " + point.lat + "<br>Longitude: " + point.lng).openPopup();
+
                 marker.on('drag', function(event) {
-                    polylinePoints[index] = marker.getLatLng();
+                    var newPosition = event.target.getLatLng();
+                    marker.setLatLng(newPosition);
+                    polylinePoints[index] = newPosition;
                     polyline.setLatLngs(polylinePoints);
+                    marker.getPopup().setContent("Latitude: " + newPosition.lat + "<br>Longitude: " + newPosition.lng).openPopup();
+                    updateEncodedPath();
                 });
             });
         }
@@ -232,85 +235,18 @@
             markers = [];
         }
 
-        // Submit form handler
-        document.getElementById('ruasjalan-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            var form = new FormData(this);
-
-            // Add encoded polyline to the form data
-            form.append('paths', encodePolyline(polylinePoints));
-
-            fetch('https://gisapis.manpits.xyz/api/ruasjalan', {
-                method: 'POST',
-                body: form,
-                headers: {
-                    'Authorization': 'Bearer ' + "{{ session('api_token') }}",
-                    'Accept': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Ruas Jalan Data submitted:', data);
-
-                // Clear map and form
-                polylinePoints = [];
-                updatePolyline();
-
-                document.getElementById('paths').value = '';
-                document.getElementById('panjang').value = '';
-                document.getElementById('lebar').value = '';
-                document.getElementById('ruasjalan-form').reset();
-
-                // Display alert or notification for successful submission
-                alert('Ruas Jalan Data submitted successfully!');
-            })
-            .catch(error => {
-                console.error('Error submitting Ruas Jalan Data:', error);
-
-                // Display alert or notification for error
-                alert('Error submitting Ruas Jalan Data. Please try again.');
-            });
+        // Show instructions popup when button is clicked
+        document.getElementById('click-me').addEventListener('click', function() {
+            alert("Untuk menggambar marker dan garis silahkan klik kiri dan untuk menghapusnya silahkan klik kanan");
         });
 
-        // Function to decode polyline points
-        function decodePolyline(encoded) {
-            var currentPosition = 0;
-            var currentLat = 0;
-            var currentLng = 0;
-            var dataLength = encoded.length;
-            var polyline = [];
+        // melihat token di console
+        console.log('API Token:', "{{ session('api_token') }}");
 
-            while (currentPosition < dataLength) {
-                var shift = 0;
-                var result = 0;
-                var byte = null;
-
-                do {
-                    byte = encoded.charCodeAt(currentPosition++) - 63;
-                    result |= (byte & 0x1f) << shift;
-                    shift += 5;
-                } while (byte >= 0x20);
-
-                var deltaLat = ((result & 1) ? ~(result >> 1) : (result >> 1));
-                currentLat += deltaLat;
-
-                shift = 0;
-                result = 0;
-
-                do {
-                    byte = encoded.charCodeAt(currentPosition++) - 63;
-                    result |= (byte & 0x1f) << shift;
-                    shift += 5;
-                } while (byte >= 0x20);
-
-                var deltaLng = ((result & 1) ? ~(result >> 1) : (result >> 1));
-                currentLng += deltaLng;
-
-                polyline.push([(currentLat / 1e5), (currentLng / 1e5)]);
-            }
-
-            return polyline;
+        // Function to update encoded path in the form
+        function updateEncodedPath() {
+            var encodedPath = encodePolyline(polylinePoints);
+            document.getElementById('paths').value = encodedPath;
         }
 
         // Function to encode polyline points
@@ -348,11 +284,6 @@
             encoded += String.fromCharCode(sgnNum + 63);
             return encoded;
         }
-
-        // melihat token di console
-        console.log('API Token:', "{{ session('api_token') }}");
     </script>
-
-
 </body>
 </html>
