@@ -175,111 +175,71 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-encoded-polyline/1.0.0/leaflet.polyline.encoded.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/polyline-encoded@0.0.9/Polyline.encoded.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script src="https://unpkg.com/leaflet-editable@1.2.0/src/Leaflet.Editable.js"></script>
     <script>
         var mymap = L.map('mapid', { zoomControl: false, editable: true }).setView([-8.409518, 115.188919], 10);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
         }).addTo(mymap);
 
-        var polyline = null;
         var polylinePoints = [];
+        var polyline = L.polyline(polylinePoints, { color: 'red', draggable: true }).addTo(mymap);
         var markers = [];
 
         mymap.on('click', function(event) {
             var latlng = event.latlng;
-            var marker = L.marker(latlng, {
-                icon: L.icon({
-                    iconUrl: "{{ asset('images/3d-map.png') }}",
-                    iconSize: [38, 38],
-                    iconAnchor: [19, 38],
-                    popupAnchor: [0, -38]
-                }),
-                draggable: true  // Make the marker draggable
-            }).addTo(mymap);
-
-            markers.push(marker);
-
-            if (!polyline) {
-                polyline = mymap.editTools.startPolyline();
-            }
-            polyline.addLatLng(latlng);
-
-            marker.bindPopup("Latitude: " + latlng.lat.toFixed(5) + "<br>Longitude: " + latlng.lng.toFixed(5)).openPopup();
-            
-            marker.on('drag', function(event) {
-                var marker = event.target;
-                var position = marker.getLatLng();
-                var index = markers.indexOf(marker);
-
-                polyline.editor.latlngs[index] = position;
-                polyline.editor.refresh();
-                updatePathInput();
-                updateDistance();
-                updateWidthInput();
-            });
-
-            marker.on('dragend', function(event) {
-                var marker = event.target;
-                var position = marker.getLatLng();
-                var index = markers.indexOf(marker);
-
-                polyline.editor.latlngs[index] = position;
-                polyline.editor.refresh();
-
-                marker.setPopupContent("Latitude: " + position.lat.toFixed(5) + "<br>Longitude: " + position.lng.toFixed(5)).openPopup();
-                updatePathInput();
-                updateDistance();
-                updateWidthInput();
-            });
+            polylinePoints.push(latlng);
+            updatePolyline();
         });
 
-        function updatePathInput() {
-            var encodedPath = encodePolyline(polyline.getLatLngs().map(function(latlng) {
-                return [latlng.lat, latlng.lng];
-            }));
-            document.getElementById('paths').value = encodedPath;
-        }
-
-        function updateDistance() {
-            var distance = L.GeometryUtil.length(polyline);
-            document.getElementById('panjang').value = (distance / 1000).toFixed(2); // converting meters to kilometers
-        }
-
-        function updateWidthInput() {
-            var width = calculateWidth();
-            document.getElementById('lebar').value = width;
-        }
-
-        function calculateWidth() {
-            if (polyline.getLatLngs().length < 2) {
-                return '';
+        mymap.on('contextmenu', function(event) {
+            if (polylinePoints.length > 0) {
+                polylinePoints.pop();
+                updatePolyline();
             }
+        });
 
-            var latlngs = polyline.getLatLngs();
-            var startPoint = latlngs[0];
-            var endPoint = latlngs[latlngs.length - 1];
+        // Add event listener to update polylinePoints on polyline edit
+        polyline.on('edit', function(event) {
+            polylinePoints = polyline.getLatLngs();
+            updatePolyline();
+        });
 
-            var lat1 = startPoint.lat;
-            var lng1 = startPoint.lng;
-            var lat2 = endPoint.lat;
-            var lng2 = endPoint.lng;
+        // Function to update polyline and markers
+        function updatePolyline() {
+            clearMap();
 
-            // Approximate width calculation
-            var distance = L.latLng(lat1, lng1).distanceTo(L.latLng(lat2, lng2));
-            var width = Math.round(distance * 0.05); // Assumption: 1 meter is equal to 0.05 units of width
+            polyline = L.polyline(polylinePoints, { color: 'blue', draggable: true }).addTo(mymap);
 
-            return width;
+            polylinePoints.forEach(function(point, index) {
+                var marker = L.marker(point, { draggable: true }).addTo(mymap);
+                markers.push(marker);
+
+                marker.on('drag', function(event) {
+                    polylinePoints[index] = marker.getLatLng();
+                    polyline.setLatLngs(polylinePoints);
+                });
+            });
         }
 
-        // Add event listener to ensure width is set
-        document.getElementById('lebar').addEventListener('input', updateWidthInput);
+        // Function to clear map and reset data
+        function clearMap() {
+            if (polyline) {
+                mymap.removeLayer(polyline);
+            }
+            markers.forEach(function(marker) {
+                mymap.removeLayer(marker);
+            });
+            markers = [];
+        }
 
         // Submit form handler
         document.getElementById('ruasjalan-form').addEventListener('submit', function(event) {
             event.preventDefault();
 
             var form = new FormData(this);
+
+            // Add encoded polyline to the form data
+            form.append('paths', encodePolyline(polylinePoints));
 
             fetch('https://gisapis.manpits.xyz/api/ruasjalan', {
                 method: 'POST',
@@ -294,16 +254,8 @@
                 console.log('Ruas Jalan Data submitted:', data);
 
                 // Clear map and form
-                if (polyline) {
-                    mymap.removeLayer(polyline);
-                }
-
-                markers.forEach(function(marker) {
-                    mymap.removeLayer(marker);
-                });
-
                 polylinePoints = [];
-                markers = [];
+                updatePolyline();
 
                 document.getElementById('paths').value = '';
                 document.getElementById('panjang').value = '';
@@ -318,95 +270,6 @@
 
                 // Display alert or notification for error
                 alert('Error submitting Ruas Jalan Data. Please try again.');
-            });
-        });
-
-        // Get Ruas Jalan data and display on the map
-        document.getElementById('get-ruas-jalan').addEventListener('click', function() {
-            var apiToken = "{{ session('api_token') }}";
-            fetch('https://gisapis.manpits.xyz/api/ruasjalan', {
-                method: 'GET',
-                headers: {
-                    'Authorization': 'Bearer ' + apiToken,
-                    'Accept': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Ruas Jalan Data:', data);
-
-                // Example of decoding the polyline from data received
-                if (data && data.status === 'success' && data.ruasjalan && data.ruasjalan.length > 0) {
-                    data.ruasjalan.forEach(function(ruas) {
-                        var decodedPoints = decodePolyline(ruas.paths);
-                        console.log('Decoded Polyline:', decodedPoints);
-
-                        // Draw polyline on map
-                        var newPolyline = L.polyline(decodedPoints, { color: 'blue' }).addTo(mymap);
-
-                        // Add popup to the polyline
-                        var popupContent = `
-                            <h5>${ruas.nama_ruas}</h5>
-                            <p>Kode Ruas: ${ruas.kode_ruas}</p>
-                            <p>Panjang: ${ruas.panjang} km</p>
-                            <p>Lebar: ${ruas.lebar} m</p>
-                            <p>Keterangan: ${ruas.keterangan}</p>
-                            <button type="button" class="btn btn-danger btn-sm delete-polyline" data-id="${ruas.id}">Delete</button>
-                        `;
-                        newPolyline.bindPopup(popupContent);
-
-                        // Event listener for delete button
-                        newPolyline.on('popupopen', function() {
-                            document.querySelector('.delete-polyline').addEventListener('click', function() {
-                                var ruasId = this.getAttribute('data-id');
-
-                                // Send delete request to API (if needed)
-                                fetch(`https://gisapis.manpits.xyz/api/ruasjalan/${ruasId}`, {
-                                    method: 'DELETE',
-                                    headers: {
-                                        'Authorization': 'Bearer ' + apiToken,
-                                        'Accept': 'application/json'
-                                    }
-                                })
-                                .then(response => {
-                                    if (response.ok) {
-                                        // Remove polyline from map
-                                        mymap.removeLayer(newPolyline);
-                                        alert('Polyline deleted successfully!');
-                                    } else {
-                                        alert('Error deleting polyline');
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error deleting polyline:', error);
-                                    alert('Error deleting polyline');
-                                });
-                            });
-                        });
-
-                        mymap.fitBounds(newPolyline.getBounds());
-
-                        // Append data to modal
-                        var ruasJalanDiv = document.createElement('div');
-                        ruasJalanDiv.classList.add('card', 'mb-3');
-                        ruasJalanDiv.innerHTML = `
-                            <div class="card-body">
-                                <h5 class="card-title">${ruas.nama_ruas}</h5>
-                                <p class="card-text">Kode Ruas: ${ruas.kode_ruas}</p>
-                                <p class="card-text">Panjang: ${ruas.panjang} km</p>
-                                <p class="card-text">Lebar: ${ruas.lebar} m</p>
-                                <p class="card-text">Keterangan: ${ruas.keterangan}</p>
-                                <button type="button" class="btn btn-primary" onclick="showModal(${ruas.id})">Detail</button>
-                            </div>
-                        `;
-                        document.getElementById('ruasJalanList').appendChild(ruasJalanDiv);
-                    });
-                } else {
-                    console.error('No Ruas Jalan data found');
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching Ruas Jalan:', error);
             });
         });
 
@@ -450,10 +313,45 @@
             return polyline;
         }
 
+        // Function to encode polyline points
+        function encodePolyline(points) {
+            var result = '';
+            var prevLat = 0;
+            var prevLng = 0;
+
+            points.forEach(function(point) {
+                var lat = Math.round(point.lat * 1e5);
+                var lng = Math.round(point.lng * 1e5);
+
+                var dLat = lat - prevLat;
+                var dLng = lng - prevLng;
+
+                result += encodeNumber(dLat) + encodeNumber(dLng);
+
+                prevLat = lat;
+                prevLng = lng;
+            });
+
+            return result;
+        }
+
+        function encodeNumber(num) {
+            var sgnNum = num << 1;
+            if (num < 0) {
+                sgnNum = ~(sgnNum);
+            }
+            var encoded = '';
+            while (sgnNum >= 0x20) {
+                encoded += String.fromCharCode((0x20 | (sgnNum & 0x1f)) + 63);
+                sgnNum >>= 5;
+            }
+            encoded += String.fromCharCode(sgnNum + 63);
+            return encoded;
+        }
+
         // melihat token di console
         console.log('API Token:', "{{ session('api_token') }}");
     </script>
-
 
 
 </body>
