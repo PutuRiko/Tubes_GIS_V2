@@ -112,6 +112,30 @@
                         <input type="text" class="form-control" id="paths" name="paths" placeholder="Masukkan Paths">
                     </div>
                     <div class="mb-3">
+                        <label for="provinsi" class="form-label">Provinsi</label>
+                        <select class="form-select" id="provinsi">
+                            <option selected disabled>Pilih Provinsi</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="kabupaten" class="form-label">Kabupaten</label>
+                        <select class="form-select" id="kabupaten">
+                            <option selected disabled>Pilih Kabupaten</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="kecamatan" class="form-label">Kecamatan</label>
+                        <select class="form-select" id="kecamatan">
+                            <option selected disabled>Pilih Kecamatan</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="desa" class="form-label">Desa</label>
+                        <select class="form-select" id="desa">
+                            <option selected disabled>Pilih Desa</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label for="desa_id" class="form-label">Desa ID</label>
                         <input type="text" class="form-control" id="desa_id" name="desa_id" placeholder="Masukkan Desa ID">
                     </div>
@@ -169,6 +193,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-encoded-polyline/1.0.0/leaflet.polyline.encoded.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/polyline-encoded@0.0.9/Polyline.encoded.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
         var mymap = L.map('mapid', { zoomControl: false, editable: true }).setView([-8.409518, 115.188919], 10);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -314,6 +339,49 @@
         function updateLebar() {
             var lebar = document.getElementById('lebar').value;
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const provinsiSelect = document.getElementById('provinsi');
+            const kabupatenSelect = document.getElementById('kabupaten');
+            
+            const headers = {
+                'Authorization': 'Bearer ' + "{{ session('api_token') }}",
+                'Accept': 'application/json'
+            };
+
+            axios.get('https://gisapis.manpits.xyz/api/mregion', { headers: headers })
+                .then(response => {
+                    const provinces = response.data.provinsi;
+                    provinces.forEach(province => {
+                        const option = document.createElement('option');
+                        option.value = province.id;
+                        option.textContent = province.provinsi;
+                        provinsiSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching provinces:', error);
+                });
+
+            provinsiSelect.addEventListener('change', function() {
+                const selectedProvinceId = this.value;
+                kabupatenSelect.innerHTML = '<option selected disabled>Pilih Kabupaten</option>'; // Reset kabupaten options
+
+                axios.get(`https://gisapis.manpits.xyz/api/kabupaten/${selectedProvinceId}`, { headers: headers })
+                    .then(response => {
+                        const kabupaten = response.data.kabupaten;
+                        kabupaten.forEach(kab => {
+                            const option = document.createElement('option');
+                            option.value = kab.id;
+                            option.textContent = kab.value;
+                            kabupatenSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching kabupaten:', error);
+                    });
+            });
+        });
     </script>
 </body>
 </html>
