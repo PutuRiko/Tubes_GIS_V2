@@ -341,13 +341,16 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            const provinsiSelect = document.getElementById('provinsi');
-            const kabupatenSelect = document.getElementById('kabupaten');
-            
             const headers = {
                 'Authorization': 'Bearer ' + "{{ session('api_token') }}",
                 'Accept': 'application/json'
             };
+
+            const provinsiSelect = document.getElementById('provinsi');
+            const kabupatenSelect = document.getElementById('kabupaten');
+            const kecamatanSelect = document.getElementById('kecamatan');
+            const desaSelect = document.getElementById('desa');
+            const desaIdInput = document.getElementById('desa_id'); // Get the Desa ID input element
 
             axios.get('https://gisapis.manpits.xyz/api/mregion', { headers: headers })
                 .then(response => {
@@ -365,7 +368,9 @@
 
             provinsiSelect.addEventListener('change', function() {
                 const selectedProvinceId = this.value;
-                kabupatenSelect.innerHTML = '<option selected disabled>Pilih Kabupaten</option>'; // Reset kabupaten options
+                kabupatenSelect.innerHTML = '<option selected disabled>Pilih Kabupaten</option>';
+                kecamatanSelect.innerHTML = '<option selected disabled>Pilih Kecamatan</option>';
+                desaSelect.innerHTML = '<option selected disabled>Pilih Desa</option>';
 
                 axios.get(`https://gisapis.manpits.xyz/api/kabupaten/${selectedProvinceId}`, { headers: headers })
                     .then(response => {
@@ -380,6 +385,50 @@
                     .catch(error => {
                         console.error('Error fetching kabupaten:', error);
                     });
+            });
+
+            kabupatenSelect.addEventListener('change', function() {
+                const selectedKabupatenId = this.value;
+                kecamatanSelect.innerHTML = '<option selected disabled>Pilih Kecamatan</option>';
+                desaSelect.innerHTML = '<option selected disabled>Pilih Desa</option>';
+
+                axios.get(`https://gisapis.manpits.xyz/api/kecamatan/${selectedKabupatenId}`, { headers: headers })
+                    .then(response => {
+                        const kecamatan = response.data.kecamatan;
+                        kecamatan.forEach(kec => {
+                            const option = document.createElement('option');
+                            option.value = kec.id;
+                            option.textContent = kec.value;
+                            kecamatanSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching kecamatan:', error);
+                    });
+            });
+
+            kecamatanSelect.addEventListener('change', function() {
+                const selectedKecamatanId = this.value;
+                desaSelect.innerHTML = '<option selected disabled>Pilih Desa</option>';
+
+                axios.get(`https://gisapis.manpits.xyz/api/desa/${selectedKecamatanId}`, { headers: headers })
+                    .then(response => {
+                        const desa = response.data.desa;
+                        desa.forEach(des => {
+                            const option = document.createElement('option');
+                            option.value = des.id;
+                            option.textContent = des.value;
+                            desaSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching desa:', error);
+                    });
+            });
+
+            desaSelect.addEventListener('change', function() {
+                const selectedDesaId = this.value;
+                desaIdInput.value = selectedDesaId; // Update the Desa ID input with the selected value
             });
         });
     </script>
