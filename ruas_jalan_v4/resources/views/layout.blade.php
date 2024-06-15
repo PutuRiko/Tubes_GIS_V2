@@ -109,7 +109,7 @@
                 <form id="ruasjalan-form">
                     <div class="mb-3">
                         <label for="paths" class="form-label">Paths</label>
-                        <input type="text" class="form-control" id="paths" name="paths" placeholder="Masukkan Paths">
+                        <input type="text" class="form-control" id="paths" name="paths" placeholder="Encoded Paths">
                     </div>
                     <div class="mb-3">
                         <label for="provinsi" class="form-label">Provinsi</label>
@@ -156,16 +156,22 @@
                         <input type="text" class="form-control" id="lebar" name="lebar" placeholder="Lebar Jalan (M)">
                     </div>
                     <div class="mb-3">
-                        <label for="eksisting_id" class="form-label">Eksisting ID</label>
-                        <input type="text" class="form-control" id="eksisting_id" name="eksisting_id" placeholder="Masukkan Eksisting ID">
+                        <label for="eksisting_id" class="form-label">Perkerasan Jalan</label>
+                        <select class="form-select" id="eksisting_id" name="eksisting_id">
+                            <option selected disabled>Pilih Perkerasan Jalan</option>
+                        </select>
                     </div>
                     <div class="mb-3">
-                        <label for="kondisi_id" class="form-label">Kondisi ID</label>
-                        <input type="text" class="form-control" id="kondisi_id" name="kondisi_id" placeholder="Masukkan Kondisi ID">
+                        <label for="kondisi_id" class="form-label">Kondisi Jalan</label>
+                        <select class="form-select" id="kondisi_id" name="kondisi_id">
+                            <option selected disabled>Pilih Kondisi Jalan</option>
+                        </select>
                     </div>
                     <div class="mb-3">
-                        <label for="jenisjalan_id" class="form-label">Jenis Jalan ID</label>
-                        <input type="text" class="form-control" id="jenisjalan_id" name="jenisjalan_id" placeholder="Masukkan Jenis Jalan ID">
+                        <label for="jenisjalan_id" class="form-label">Jenis Jalan</label>
+                        <select class="form-select" id="jenisjalan_id" name="jenisjalan_id">
+                            <option selected disabled>Pilih Jenis Jalan</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="keterangan" class="form-label">Keterangan</label>
@@ -236,7 +242,7 @@
         function updatePolyline() {
             clearMap();
 
-            polyline = L.polyline(polylinePoints, { color: 'red', draggable: true }).addTo(mymap);
+            polyline = L.polyline(polylinePoints, { color: 'purple', draggable: true }).addTo(mymap);
 
             polylinePoints.forEach(function(point, index) {
                 var marker = L.marker(point, { draggable: true }).addTo(mymap);
@@ -351,6 +357,55 @@
             const kecamatanSelect = document.getElementById('kecamatan');
             const desaSelect = document.getElementById('desa');
             const desaIdInput = document.getElementById('desa_id'); // Get the Desa ID input element
+            const eksistingSelect = document.getElementById('eksisting_id'); // Get the Eksisting ID select element
+            const kondisiSelect = document.getElementById('kondisi_id'); // Get the Kondisi Jalan select element
+            const jenisJalanSelect = document.getElementById('jenisjalan_id'); // Get the Jenis Jalan select element
+
+
+            // Fetch and populate Eksisting ID dropdown
+            axios.get('https://gisapis.manpits.xyz/api/meksisting', { headers: headers })
+                .then(response => {
+                    const eksistingData = response.data.eksisting;
+                    eksistingData.forEach(eksisting => {
+                        const option = document.createElement('option');
+                        option.value = eksisting.id;
+                        option.textContent = eksisting.eksisting;
+                        eksistingSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching eksisting:', error);
+                });
+
+            // Fetch and populate Kondisi Jalan dropdown
+            axios.get('https://gisapis.manpits.xyz/api/mkondisi', { headers: headers })
+                .then(response => {
+                    const kondisiData = response.data.eksisting;
+                    kondisiData.forEach(kondisi => {
+                        const option = document.createElement('option');
+                        option.value = kondisi.id;
+                        option.textContent = kondisi.kondisi;
+                        kondisiSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching kondisi:', error);
+                });
+
+            // Fetch and populate Jenis Jalan dropdown
+            axios.get('https://gisapis.manpits.xyz/api/mjenisjalan', { headers: headers })
+                .then(response => {
+                    const jenisJalanData = response.data.eksisting;
+                    jenisJalanData.forEach(jenisJalan => {
+                        const option = document.createElement('option');
+                        option.value = jenisJalan.id;
+                        option.textContent = jenisJalan.jenisjalan;
+                        jenisJalanSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching jenis jalan:', error);
+                });
 
             axios.get('https://gisapis.manpits.xyz/api/mregion', { headers: headers })
                 .then(response => {
