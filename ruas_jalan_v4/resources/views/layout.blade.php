@@ -21,7 +21,13 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet-editable@1.2.0/src/Leaflet.Editable.css" />
     <style>
         #mapid {
-            height: 700px;
+            height: 500px; /* Set tinggi peta */
+            width: 70%; /* Set lebar peta */
+            margin: 20px auto; /* Menggeser ke tengah */
+            display: block; /* Agar peta tampil sebagai blok */
+            border: 5px solid black; /* Menambahkan border */
+            border-radius: 8px; /* Agar ujung border menjadi lebih melengkung */
+            margin-top: 60px; /* Jarak dari atas */
         }
     </style>
 </head>
@@ -36,11 +42,6 @@
         </div>
         <nav class="header-nav ms-auto">
             <ul class="d-flex align-items-center">
-                <li class="nav-item d-block d-lg-none">
-                    <a class="nav-link nav-icon search-bar-toggle " href="#">
-                        <i class="bi bi-search"></i>
-                    </a>
-                </li>
                 <li class="nav-item dropdown pe-3">
                     <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
                         <img src="{{ asset('images/profile-img.jpg') }}" alt="Profile" class="rounded-circle">
@@ -50,33 +51,6 @@
                         <li class="dropdown-header">
                             <h6>User</h6>
                             <span>2105551118</span>
-                        </li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center" href="users-profile.html">
-                                <i class="bi bi-person"></i>
-                                <span>My Profile</span>
-                            </a>
-                        </li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center" href="users-profile.html">
-                                <i class="bi bi-gear"></i>
-                                <span>Account Settings</span>
-                            </a>
-                        </li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center" href="pages-faq.html">
-                                <i class="bi bi-question-circle"></i>
-                                <span>Need Help?</span>
-                            </a>
                         </li>
                         <li>
                             <hr class="dropdown-divider">
@@ -137,7 +111,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="desa_id" class="form-label">Desa ID</label>
-                        <input type="text" class="form-control" id="desa_id" name="desa_id" placeholder="Masukkan Desa ID">
+                        <input type="text" class="form-control" id="desa_id" name="desa_id" placeholder="ID Desa">
                     </div>
                     <div class="mb-3">
                         <label for="kode_ruas" class="form-label">Kode Ruas</label>
@@ -148,7 +122,7 @@
                         <input type="text" class="form-control" id="nama_ruas" name="nama_ruas" placeholder="Masukkan Nama Ruas">
                     </div>
                     <div class="mb-3">
-                        <label for="panjang" class="form-label">Panjang</label>
+                        <label for="panjang" class="form-label">Panjang Jalan (KM)</label>
                         <input type="text" class="form-control" id="panjang" name="panjang" placeholder="Panjang Jalan (KM)">
                     </div>
                     <div class="mb-3">
@@ -156,22 +130,36 @@
                         <input type="text" class="form-control" id="lebar" name="lebar" placeholder="Lebar Jalan (M)">
                     </div>
                     <div class="mb-3">
-                        <label for="eksisting_id" class="form-label">Perkerasan Jalan</label>
-                        <select class="form-select" id="eksisting_id" name="eksisting_id">
+                        <label for="eksisting" class="form-label">Perkerasan Jalan</label>
+                        <select class="form-select" id="eksisting" name="eksisting">
                             <option selected disabled>Pilih Perkerasan Jalan</option>
                         </select>
                     </div>
+                    </div>
                     <div class="mb-3">
-                        <label for="kondisi_id" class="form-label">Kondisi Jalan</label>
-                        <select class="form-select" id="kondisi_id" name="kondisi_id">
+                        <label for="eksisting_id" class="form-label">Eksisting ID</label>
+                        <input type="text" class="form-control" id="eksisting_id" name="eksisting_id" placeholder="ID Eksisting">
+                    </div>
+                    <div class="mb-3">
+                        <label for="kondisi" class="form-label">Kondisi Jalan</label>
+                        <select class="form-select" id="kondisi" name="kondisi">
                             <option selected disabled>Pilih Kondisi Jalan</option>
                         </select>
                     </div>
+                    </div>
                     <div class="mb-3">
-                        <label for="jenisjalan_id" class="form-label">Jenis Jalan</label>
-                        <select class="form-select" id="jenisjalan_id" name="jenisjalan_id">
+                        <label for="kondisi_id" class="form-label">Kondisi ID</label>
+                        <input type="text" class="form-control" id="kondisi_id" name="kondisi_id" placeholder="ID Kondisi">
+                    </div>
+                    <div class="mb-3">
+                        <label for="jenisjalan" class="form-label">Jenis Jalan</label>
+                        <select class="form-select" id="jenisjalan" name="jenisjalan">
                             <option selected disabled>Pilih Jenis Jalan</option>
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="jenisjalan_id" class="form-label">Jenis Jalan ID</label>
+                        <input type="text" class="form-control" id="jenisjalan_id" name="jenisjalan_id" placeholder="ID Jenis Jalan">
                     </div>
                     <div class="mb-3">
                         <label for="keterangan" class="form-label">Keterangan</label>
@@ -209,6 +197,7 @@
         var polylinePoints = [];
         var polyline = L.polyline(polylinePoints, { color: 'red', draggable: true }).addTo(mymap);
         var markers = [];
+        var polyline;
 
         mymap.on('click', function(event) {
             var latlng = event.latlng;
@@ -278,9 +267,6 @@
         document.getElementById('click-me').addEventListener('click', function() {
             alert("Untuk menggambar marker dan garis silahkan klik kiri dan untuk menghapusnya silahkan klik kanan");
         });
-
-        // melihat token di console
-        console.log('API Token:', "{{ session('api_token') }}");
 
         // Function to update encoded path in the form
         function updateEncodedPath() {
@@ -357,9 +343,12 @@
             const kecamatanSelect = document.getElementById('kecamatan');
             const desaSelect = document.getElementById('desa');
             const desaIdInput = document.getElementById('desa_id'); // Get the Desa ID input element
-            const eksistingSelect = document.getElementById('eksisting_id'); // Get the Eksisting ID select element
-            const kondisiSelect = document.getElementById('kondisi_id'); // Get the Kondisi Jalan select element
-            const jenisJalanSelect = document.getElementById('jenisjalan_id'); // Get the Jenis Jalan select element
+            const eksistingSelect = document.getElementById('eksisting');
+            const eksistingIdInput = document.getElementById('eksisting_id'); // Get the Eksisting ID input element
+            const kondisiSelect = document.getElementById('kondisi');
+            const kondisiIdInput = document.getElementById('kondisi_id'); // Get the Kondisi ID input element
+            const jenisJalanSelect = document.getElementById('jenisjalan'); 
+            const jenisJalanIdInput = document.getElementById('jenisjalan_id'); // Get the Jenis Jalan ID input element
 
 
             // Fetch and populate Eksisting ID dropdown
@@ -376,6 +365,11 @@
                 .catch(error => {
                     console.error('Error fetching eksisting:', error);
                 });
+            
+            eksistingSelect.addEventListener('change', function() {
+                const selectedEksistingId = this.value;
+                eksistingIdInput.value = selectedEksistingId; // Update the Desa ID input with the selected value
+            });
 
             // Fetch and populate Kondisi Jalan dropdown
             axios.get('https://gisapis.manpits.xyz/api/mkondisi', { headers: headers })
@@ -391,6 +385,11 @@
                 .catch(error => {
                     console.error('Error fetching kondisi:', error);
                 });
+            
+            kondisiSelect.addEventListener('change', function() {
+                const selectedKondisiId = this.value;
+                kondisiIdInput.value = selectedKondisiId; // Update the Desa ID input with the selected value
+            });
 
             // Fetch and populate Jenis Jalan dropdown
             axios.get('https://gisapis.manpits.xyz/api/mjenisjalan', { headers: headers })
@@ -406,6 +405,11 @@
                 .catch(error => {
                     console.error('Error fetching jenis jalan:', error);
                 });
+
+            jenisJalanSelect.addEventListener('change', function() {
+                const selectedJenisJalanId = this.value;
+                jenisJalanIdInput.value = selectedJenisJalanId; // Update the Desa ID input with the selected value
+            });
 
             axios.get('https://gisapis.manpits.xyz/api/mregion', { headers: headers })
                 .then(response => {
@@ -486,6 +490,9 @@
                 desaIdInput.value = selectedDesaId; // Update the Desa ID input with the selected value
             });
         });
+
+        // melihat token di console
+        console.log('API Token:', "{{ session('api_token') }}");
     </script>
 </body>
 </html>

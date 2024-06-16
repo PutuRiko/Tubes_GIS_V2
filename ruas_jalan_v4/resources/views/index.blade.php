@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         #map {
-            height: 400px; /* Set the height for the map */
+            height: 500px; /* Set the height for the map */
             width: 100%; /* Set the width for the map */
         }
     </style>
