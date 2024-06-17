@@ -21,8 +21,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet-editable@1.2.0/src/Leaflet.Editable.css" />
     <style>
         #mapid {
-            height: 500px; /* Set tinggi peta */
-            width: 70%; /* Set lebar peta */
+            height: 450px; /* Set tinggi peta */
+            width: 65%; /* Set lebar peta */
             margin: 20px auto; /* Menggeser ke tengah */
             display: block; /* Agar peta tampil sebagai blok */
             border: 5px solid black; /* Menambahkan border */
@@ -45,12 +45,11 @@
                 <li class="nav-item dropdown pe-3">
                     <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
                         <img src="{{ asset('images/profile-img.jpg') }}" alt="Profile" class="rounded-circle">
-                        <span class="d-none d-md-block dropdown-toggle ps-2">Putu Riko</span>
+                        <span class="d-none d-md-block dropdown-toggle ps-2">Welcome</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
                         <li class="dropdown-header">
                             <h6>User</h6>
-                            <span>2105551118</span>
                         </li>
                         <li>
                             <hr class="dropdown-divider">
@@ -173,6 +172,25 @@
     <main>
         <div id="mapid"></div>
         <div id="ruasJalanList"></div>
+        <table class="table table-bordered mt-3" style="width: 60%; margin: auto; font-size: 0.9em;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Desa ID</th>
+                    <th>Kode Ruas</th>
+                    <th>Nama Ruas</th>
+                    <th>Panjang</th>
+                    <th>Lebar</th>
+                    <th>Eksisting ID</th>
+                    <th>Kondisi ID</th>
+                    <th>Jenis Jalan ID</th>
+                    <th>Keterangan</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data rows will be added here -->
+            </tbody>
+        </table>
     </main>
     <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
     <script src="{{ asset('vendor/apexcharts/apexcharts.min.js') }}"></script>
