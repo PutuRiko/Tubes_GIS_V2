@@ -176,6 +176,7 @@
             <thead>
                 <tr>
                     <th>ID</th>
+                    <th>Paths</th>
                     <th>Desa ID</th>
                     <th>Kode Ruas</th>
                     <th>Nama Ruas</th>
@@ -187,7 +188,7 @@
                     <th>Keterangan</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="tableBody">
                 <!-- Data rows will be added here -->
             </tbody>
         </table>
@@ -511,6 +512,71 @@
 
         // melihat token di console
         console.log('API Token:', "{{ session('api_token') }}");
+
+        document.getElementById('submitRuasJalan').addEventListener('click', function(event) {
+            event.preventDefault();
+            
+            // Gather form data
+            const data = {
+                paths: document.querySelector('input[name="paths"]').value,
+                desa_id: document.querySelector('input[name="desa_id"]').value,
+                kode_ruas: document.querySelector('input[name="kode_ruas"]').value,
+                nama_ruas: document.querySelector('input[name="nama_ruas"]').value,
+                panjang: document.querySelector('input[name="panjang"]').value,
+                lebar: document.querySelector('input[name="lebar"]').value,
+                eksisting_id: document.querySelector('input[name="eksisting_id"]').value,
+                kondisi_id: document.querySelector('input[name="kondisi_id"]').value,
+                jenisjalan_id: document.querySelector('input[name="jenisjalan_id"]').value,
+                keterangan: document.querySelector('input[name="keterangan"]').value
+            };
+
+            // POST request to submit data
+            axios.post('https://gisapis.manpits.xyz/api/ruasjalan', data)
+                .then(response => {
+                    alert('Data submitted successfully');
+                    fetchData(); // Refresh data in the table
+                })
+                .catch(error => {
+                    console.error('Error submitting data:', error);
+                });
+        });
+
+        function fetchData() {
+            axios.get('https://gisapis.manpits.xyz/api/ruasjalan', {
+                headers: {
+                    'Authorization': 'Bearer ' + "{{ session('api_token') }}",
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                const ruasjalan = response.data.ruasjalan;
+                const tableBody = document.getElementById('tableBody');
+                tableBody.innerHTML = '';
+
+                ruasjalan.forEach(item => {
+                    const row = `<tr>
+                        <td>${item.id}</td>
+                        <td>${item.paths}</td>
+                        <td>${item.desa_id}</td>
+                        <td>${item.kode_ruas}</td>
+                        <td>${item.nama_ruas}</td>
+                        <td>${item.panjang}</td>
+                        <td>${item.lebar}</td>
+                        <td>${item.eksisting_id}</td>
+                        <td>${item.kondisi_id}</td>
+                        <td>${item.jenisjalan_id}</td>
+                        <td>${item.keterangan}</td>
+                    </tr>`;
+                    tableBody.innerHTML += row;
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+            });
+        }
+
+        // Fetch data initially to populate the table
+        fetchData();
     </script>
 </body>
 </html>
