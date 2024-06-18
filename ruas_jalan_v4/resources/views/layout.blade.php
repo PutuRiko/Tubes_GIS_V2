@@ -172,26 +172,28 @@
     <main>
         <div id="mapid"></div>
         <div id="ruasJalanList"></div>
-        <table class="table table-bordered mt-3" style="width: 60%; margin: auto; font-size: 0.9em;">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Paths</th>
-                    <th>Desa ID</th>
-                    <th>Kode Ruas</th>
-                    <th>Nama Ruas</th>
-                    <th>Panjang</th>
-                    <th>Lebar</th>
-                    <th>Eksisting ID</th>
-                    <th>Kondisi ID</th>
-                    <th>Jenis Jalan ID</th>
-                    <th>Keterangan</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody">
-                <!-- Data rows will be added here -->
-            </tbody>
-        </table>
+        <div class="table-wrapper">
+            <table class="table table-bordered mt-3">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Desa ID</th>
+                        <th>Kode Ruas</th>
+                        <th>Nama Ruas</th>
+                        <th>Panjang</th>
+                        <th>Lebar</th>
+                        <th>Eksisting ID</th>
+                        <th>Kondisi ID</th>
+                        <th>Jenis Jalan ID</th>
+                        <th>Keterangan</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Data rows will be added here -->
+                </tbody>
+            </table>
+        </div>
     </main>
     <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
     <script src="{{ asset('vendor/apexcharts/apexcharts.min.js') }}"></script>
@@ -513,70 +515,151 @@
         // melihat token di console
         console.log('API Token:', "{{ session('api_token') }}");
 
-        document.getElementById('submitRuasJalan').addEventListener('click', function(event) {
-            event.preventDefault();
-            
-            // Gather form data
-            const data = {
-                paths: document.querySelector('input[name="paths"]').value,
-                desa_id: document.querySelector('input[name="desa_id"]').value,
-                kode_ruas: document.querySelector('input[name="kode_ruas"]').value,
-                nama_ruas: document.querySelector('input[name="nama_ruas"]').value,
-                panjang: document.querySelector('input[name="panjang"]').value,
-                lebar: document.querySelector('input[name="lebar"]').value,
-                eksisting_id: document.querySelector('input[name="eksisting_id"]').value,
-                kondisi_id: document.querySelector('input[name="kondisi_id"]').value,
-                jenisjalan_id: document.querySelector('input[name="jenisjalan_id"]').value,
-                keterangan: document.querySelector('input[name="keterangan"]').value
+        document.getElementById('submitRuasJalan').addEventListener('click', function (e) {
+            e.preventDefault();
+
+            // Get form data
+            var formData = {
+                desa_id: document.getElementById('desa_id').value,
+                kode_ruas: document.getElementById('kode_ruas').value,
+                nama_ruas: document.getElementById('nama_ruas').value,
+                panjang: document.getElementById('panjang').value,
+                lebar: document.getElementById('lebar').value,
+                eksisting_id: document.getElementById('eksisting_id').value,
+                kondisi_id: document.getElementById('kondisi_id').value,
+                jenisjalan_id: document.getElementById('jenisjalan_id').value,
+                keterangan: document.getElementById('keterangan').value
             };
 
-            // POST request to submit data
-            axios.post('https://gisapis.manpits.xyz/api/ruasjalan', data)
-                .then(response => {
-                    alert('Data submitted successfully');
-                    fetchData(); // Refresh data in the table
-                })
-                .catch(error => {
-                    console.error('Error submitting data:', error);
-                });
+            // Submit data using fetch
+            fetch('https://gisapis.manpits.xyz/api/ruasjalan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Decode paths and add polyline to map
+                    var decodedPath = decodePolyline(formData.paths);
+                    addPolylineToMap(decodedPath);
+
+                    // Optionally, refresh the table
+                    fetchAndDisplayData();
+                } else {
+                    alert('Error submitting data');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
         });
 
-        function fetchData() {
-            axios.get('https://gisapis.manpits.xyz/api/ruasjalan', {
+
+        function fetchAndDisplayData() {
+            fetch('https://gisapis.manpits.xyz/api/ruasjalan', {
+                method: 'GET',
                 headers: {
                     'Authorization': 'Bearer ' + "{{ session('api_token') }}",
                     'Accept': 'application/json'
                 }
             })
-            .then(response => {
-                const ruasjalan = response.data.ruasjalan;
-                const tableBody = document.getElementById('tableBody');
-                tableBody.innerHTML = '';
+            .then(response => response.json())
+            .then(data => {
+                if (data.ruasjalan) {
+                    var tableBody = document.getElementById('tableBody');
+                    tableBody.innerHTML = '';
 
-                ruasjalan.forEach(item => {
-                    const row = `<tr>
-                        <td>${item.id}</td>
-                        <td>${item.paths}</td>
-                        <td>${item.desa_id}</td>
-                        <td>${item.kode_ruas}</td>
-                        <td>${item.nama_ruas}</td>
-                        <td>${item.panjang}</td>
-                        <td>${item.lebar}</td>
-                        <td>${item.eksisting_id}</td>
-                        <td>${item.kondisi_id}</td>
-                        <td>${item.jenisjalan_id}</td>
-                        <td>${item.keterangan}</td>
-                    </tr>`;
-                    tableBody.innerHTML += row;
-                });
+                    data.ruasjalan.forEach(item => {
+                        // Decode paths and add polyline to map
+                        var decodedPath = decodePolyline(item.paths);
+                        addPolylineToMap(decodedPath);
+
+                        // Add data to table
+                        var row = document.createElement('tr');
+
+                        row.innerHTML = `
+                            <td>${item.id}</td>
+                            <td>${item.desa_id}</td>
+                            <td>${item.kode_ruas}</td>
+                            <td>${item.nama_ruas}</td>
+                            <td>${item.panjang}</td>
+                            <td>${item.lebar}</td>
+                            <td>${item.eksisting_id}</td>
+                            <td>${item.kondisi_id}</td>
+                            <td>${item.jenisjalan_id}</td>
+                            <td>${item.keterangan}</td>
+                            <td>
+                                <button class="btn btn-info" onclick="addPolylineToMap(decodePolyline('${item.paths}'))">Tampilkan Polyline</button>
+                                <button class="btn btn-warning">Edit</button>
+                                <button class="btn btn-danger">Delete</button>
+                            </td>
+                        `;
+                        
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    alert('Error fetching data');
+                }
             })
             .catch(error => {
-                console.error('Error fetching data:', error);
+                console.error('Error:', error);
             });
         }
 
-        // Fetch data initially to populate the table
-        fetchData();
+        // Call fetchAndDisplayData initially to populate the table and map
+        fetchAndDisplayData();
+
+
+        // Function to decode polyline points
+        function decodePolyline(encoded) {
+            var currentPosition = 0;
+            var currentLat = 0;
+            var currentLng = 0;
+            var dataLength = encoded.length;
+            var polyline = [];
+
+            while (currentPosition < dataLength) {
+                var shift = 0;
+                var result = 0;
+                var byte = null;
+
+                do {
+                    byte = encoded.charCodeAt(currentPosition++) - 63;
+                    result |= (byte & 0x1f) << shift;
+                    shift += 5;
+                } while (byte >= 0x20);
+
+                var deltaLat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+                currentLat += deltaLat;
+
+                shift = 0;
+                result = 0;
+
+                do {
+                    byte = encoded.charCodeAt(currentPosition++) - 63;
+                    result |= (byte & 0x1f) << shift;
+                    shift += 5;
+                } while (byte >= 0x20);
+
+                var deltaLng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+                currentLng += deltaLng;
+
+                polyline.push([(currentLat / 1e5), (currentLng / 1e5)]);
+            }
+
+            return polyline;
+        }
+
+        // Function to add polyline to map
+        function addPolylineToMap(decodedPath) {
+            var polyline = L.polyline(decodedPath, {color: 'blue'}).addTo(mymap);
+            mymap.fitBounds(polyline.getBounds());
+        }
+
+
     </script>
 </body>
 </html>
