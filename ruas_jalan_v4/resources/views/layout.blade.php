@@ -21,13 +21,13 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet-editable@1.2.0/src/Leaflet.Editable.css" />
     <style>
         #mapid {
-            height: 450px; /* Set tinggi peta */
-            width: 65%; /* Set lebar peta */
-            margin: 20px auto; /* Menggeser ke tengah */
-            display: block; /* Agar peta tampil sebagai blok */
-            border: 5px solid black; /* Menambahkan border */
-            border-radius: 8px; /* Agar ujung border menjadi lebih melengkung */
-            margin-top: 60px; /* Jarak dari atas */
+            height: 450px; 
+            width: 65%;
+            margin: 20px auto; 
+            display: block; 
+            border: 5px solid black;
+            border-radius: 8px; 
+            margin-top: 60px;
         }
     </style>
 </head>
@@ -44,7 +44,6 @@
             <ul class="d-flex align-items-center">
                 <li class="nav-item dropdown pe-3">
                     <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
-                        <img src="{{ asset('images/profile-img.jpg') }}" alt="Profile" class="rounded-circle">
                         <span class="d-none d-md-block dropdown-toggle ps-2">Welcome</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
@@ -91,7 +90,7 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="kabupaten" class="form-label">Kabupaten</label>
+                        <label for="kabupaten" class="form-label">Kabupaten/Kota</label>
                         <select class="form-select" id="kabupaten">
                             <option selected disabled>Pilih Kabupaten</option>
                         </select>
@@ -125,7 +124,7 @@
                         <input type="text" class="form-control" id="panjang" name="panjang" placeholder="Panjang Jalan (KM)">
                     </div>
                     <div class="mb-3">
-                        <label for="lebar" class="form-label">Lebar</label>
+                        <label for="lebar" class="form-label">Lebar Jalan (M)</label>
                         <input type="text" class="form-control" id="lebar" name="lebar" placeholder="Lebar Jalan (M)">
                     </div>
                     <div class="mb-3">
@@ -133,7 +132,6 @@
                         <select class="form-select" id="eksisting" name="eksisting">
                             <option selected disabled>Pilih Perkerasan Jalan</option>
                         </select>
-                    </div>
                     </div>
                     <div class="mb-3">
                         <label for="eksisting_id" class="form-label">Eksisting ID</label>
@@ -180,13 +178,14 @@
                         <th>Desa ID</th>
                         <th>Kode Ruas</th>
                         <th>Nama Ruas</th>
-                        <th>Panjang</th>
-                        <th>Lebar</th>
-                        <th>Eksisting ID</th>
+                        <th>Panjang (KM)</th>
+                        <th>Lebar (M)</th>
+                        <th>Perkerasan Jalan ID</th>
                         <th>Kondisi ID</th>
                         <th>Jenis Jalan ID</th>
                         <th>Keterangan</th>
                         <th>Actions</th>
+                        <th>Paths</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -219,6 +218,15 @@
         var polyline = L.polyline(polylinePoints, { color: 'red', draggable: true }).addTo(mymap);
         var markers = [];
         var polyline;
+        var polylineMap = {};
+        var eksistingMap = {};
+        var kondisiMap = {};
+        var jenisJalanMap = {};
+        var desaMap = {};
+
+        document.getElementById('click-me').addEventListener('click', function() {
+            alert("Untuk menggambar marker dan garis silahkan klik kiri dan untuk menghapusnya silahkan klik kanan");
+        });
 
         mymap.on('click', function(event) {
             var latlng = event.latlng;
@@ -226,7 +234,6 @@
             updatePolyline();
             updateEncodedPath();
             updatePanjang();
-            updateLebar();
         });
 
         mymap.on('contextmenu', function(event) {
@@ -235,20 +242,16 @@
                 updatePolyline();
                 updateEncodedPath();
                 updatePanjang();
-                updateLebar();
             }
         });
 
-        // Add event listener to update polylinePoints on polyline edit
         polyline.on('edit', function(event) {
             polylinePoints = polyline.getLatLngs();
             updatePolyline();
             updateEncodedPath();
             updatePanjang();
-            updateLebar();
         });
 
-        // Function to update polyline and markers
         function updatePolyline() {
             clearMap();
 
@@ -268,12 +271,10 @@
                     marker.getPopup().setContent("Latitude: " + newPosition.lat + "<br>Longitude: " + newPosition.lng).openPopup();
                     updateEncodedPath();
                     updatePanjang();
-                    updateLebar();
                 });
             });
         }
 
-        // Function to clear map and reset data
         function clearMap() {
             if (polyline) {
                 mymap.removeLayer(polyline);
@@ -284,18 +285,11 @@
             markers = [];
         }
 
-        // Show instructions popup when button is clicked
-        document.getElementById('click-me').addEventListener('click', function() {
-            alert("Untuk menggambar marker dan garis silahkan klik kiri dan untuk menghapusnya silahkan klik kanan");
-        });
-
-        // Function to update encoded path in the form
         function updateEncodedPath() {
             var encodedPath = encodePolyline(polylinePoints);
             document.getElementById('paths').value = encodedPath;
         }
 
-        // Function to encode polyline points
         function encodePolyline(points) {
             var result = '';
             var prevLat = 0;
@@ -331,29 +325,25 @@
             return encoded;
         }
 
-        // Function to update the length of the polyline in the form
         function updatePanjang() {
             var panjang = calculatePolylineLength(polylinePoints);
-            document.getElementById('panjang').value = panjang.toFixed(3); // Display the length in kilometers with 3 decimal places
+            document.getElementById('panjang').value = panjang.toFixed(1);
         }
 
-        // Function to calculate the length of a polyline in kilometers
         function calculatePolylineLength(points) {
             var length = 0;
             for (var i = 1; i < points.length; i++) {
                 var p1 = points[i - 1];
                 var p2 = points[i];
-                length += p1.distanceTo(p2) / 1000; // Convert meters to kilometers
+                length += p1.distanceTo(p2) / 1000;
             }
             return length;
         }
 
-        // Function to update the width of the road in the form
-        function updateLebar() {
-            var lebar = document.getElementById('lebar').value;
-        }
+        console.log('API Token:', "{{ session('api_token') }}");
 
         document.addEventListener('DOMContentLoaded', function() {
+            
             const headers = {
                 'Authorization': 'Bearer ' + "{{ session('api_token') }}",
                 'Accept': 'application/json'
@@ -363,20 +353,19 @@
             const kabupatenSelect = document.getElementById('kabupaten');
             const kecamatanSelect = document.getElementById('kecamatan');
             const desaSelect = document.getElementById('desa');
-            const desaIdInput = document.getElementById('desa_id'); // Get the Desa ID input element
+            const desaIdInput = document.getElementById('desa_id'); 
             const eksistingSelect = document.getElementById('eksisting');
-            const eksistingIdInput = document.getElementById('eksisting_id'); // Get the Eksisting ID input element
+            const eksistingIdInput = document.getElementById('eksisting_id'); 
             const kondisiSelect = document.getElementById('kondisi');
-            const kondisiIdInput = document.getElementById('kondisi_id'); // Get the Kondisi ID input element
+            const kondisiIdInput = document.getElementById('kondisi_id'); 
             const jenisJalanSelect = document.getElementById('jenisjalan'); 
-            const jenisJalanIdInput = document.getElementById('jenisjalan_id'); // Get the Jenis Jalan ID input element
+            const jenisJalanIdInput = document.getElementById('jenisjalan_id'); 
 
-
-            // Fetch and populate Eksisting ID dropdown
             axios.get('https://gisapis.manpits.xyz/api/meksisting', { headers: headers })
                 .then(response => {
                     const eksistingData = response.data.eksisting;
                     eksistingData.forEach(eksisting => {
+                        eksistingMap[eksisting.id] = eksisting.eksisting;
                         const option = document.createElement('option');
                         option.value = eksisting.id;
                         option.textContent = eksisting.eksisting;
@@ -389,14 +378,14 @@
             
             eksistingSelect.addEventListener('change', function() {
                 const selectedEksistingId = this.value;
-                eksistingIdInput.value = selectedEksistingId; // Update the Desa ID input with the selected value
+                eksistingIdInput.value = selectedEksistingId;
             });
 
-            // Fetch and populate Kondisi Jalan dropdown
             axios.get('https://gisapis.manpits.xyz/api/mkondisi', { headers: headers })
                 .then(response => {
                     const kondisiData = response.data.eksisting;
                     kondisiData.forEach(kondisi => {
+                        kondisiMap[kondisi.id] = kondisi.kondisi;
                         const option = document.createElement('option');
                         option.value = kondisi.id;
                         option.textContent = kondisi.kondisi;
@@ -409,14 +398,14 @@
             
             kondisiSelect.addEventListener('change', function() {
                 const selectedKondisiId = this.value;
-                kondisiIdInput.value = selectedKondisiId; // Update the Desa ID input with the selected value
+                kondisiIdInput.value = selectedKondisiId; 
             });
 
-            // Fetch and populate Jenis Jalan dropdown
             axios.get('https://gisapis.manpits.xyz/api/mjenisjalan', { headers: headers })
                 .then(response => {
                     const jenisJalanData = response.data.eksisting;
                     jenisJalanData.forEach(jenisJalan => {
+                        jenisJalanMap[jenisJalan.id] = jenisJalan.jenisjalan;
                         const option = document.createElement('option');
                         option.value = jenisJalan.id;
                         option.textContent = jenisJalan.jenisjalan;
@@ -429,7 +418,7 @@
 
             jenisJalanSelect.addEventListener('change', function() {
                 const selectedJenisJalanId = this.value;
-                jenisJalanIdInput.value = selectedJenisJalanId; // Update the Desa ID input with the selected value
+                jenisJalanIdInput.value = selectedJenisJalanId; 
             });
 
             axios.get('https://gisapis.manpits.xyz/api/mregion', { headers: headers })
@@ -495,6 +484,7 @@
                     .then(response => {
                         const desa = response.data.desa;
                         desa.forEach(des => {
+                            desaMap[des.id] = des.desa;
                             const option = document.createElement('option');
                             option.value = des.id;
                             option.textContent = des.value;
@@ -508,18 +498,16 @@
 
             desaSelect.addEventListener('change', function() {
                 const selectedDesaId = this.value;
-                desaIdInput.value = selectedDesaId; // Update the Desa ID input with the selected value
+                desaIdInput.value = selectedDesaId;
             });
         });
 
-        // melihat token di console
-        console.log('API Token:', "{{ session('api_token') }}");
 
         document.getElementById('submitRuasJalan').addEventListener('click', function (e) {
-            e.preventDefault();
+            e.preventDefault(); 
 
-            // Get form data
             var formData = {
+                paths: document.getElementById('paths').value,
                 desa_id: document.getElementById('desa_id').value,
                 kode_ruas: document.getElementById('kode_ruas').value,
                 nama_ruas: document.getElementById('nama_ruas').value,
@@ -531,32 +519,36 @@
                 keterangan: document.getElementById('keterangan').value
             };
 
-            // Submit data using fetch
             fetch('https://gisapis.manpits.xyz/api/ruasjalan', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Authorization': 'Bearer ' + "{{ session('api_token') }}",
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(formData) 
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Decode paths and add polyline to map
-                    var decodedPath = decodePolyline(formData.paths);
-                    addPolylineToMap(decodedPath);
-
-                    // Optionally, refresh the table
+                    alert('Data Berhasil Ditambahkan');
                     fetchAndDisplayData();
+                    location.reload();
                 } else {
-                    alert('Error submitting data');
+                    alert('Data berhasil ditambahkan, silahkan refresh halaman');
+                    location.reload();
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
+                alert('Terjadi kesalahan saat mengirim data');
             });
-        });
 
+            function clearForm() {
+                document.getElementById('ruasjalan-form').reset();
+                polylinePoints = [];
+                updatePolyline();
+            }
+        });
 
         function fetchAndDisplayData() {
             fetch('https://gisapis.manpits.xyz/api/ruasjalan', {
@@ -573,31 +565,28 @@
                     tableBody.innerHTML = '';
 
                     data.ruasjalan.forEach(item => {
-                        // Decode paths and add polyline to map
                         var decodedPath = decodePolyline(item.paths);
-                        addPolylineToMap(decodedPath);
+                        addPolylineToMap(decodedPath, item);
 
-                        // Add data to table
                         var row = document.createElement('tr');
-
                         row.innerHTML = `
                             <td>${item.id}</td>
-                            <td>${item.desa_id}</td>
+                            <td>${desaMap[item.desa_id] || item.desa_id}</td>
                             <td>${item.kode_ruas}</td>
                             <td>${item.nama_ruas}</td>
                             <td>${item.panjang}</td>
                             <td>${item.lebar}</td>
-                            <td>${item.eksisting_id}</td>
-                            <td>${item.kondisi_id}</td>
-                            <td>${item.jenisjalan_id}</td>
+                            <td>${eksistingMap[item.eksisting_id] || item.eksisting_id}</td>
+                            <td>${kondisiMap[item.kondisi_id] || item.kondisi_id}</td>
+                            <td>${jenisJalanMap[item.jenisjalan_id] || item.jenisjalan_id}</td>
                             <td>${item.keterangan}</td>
                             <td>
-                                <button class="btn btn-info" onclick="addPolylineToMap(decodePolyline('${item.paths}'))">Tampilkan Polyline</button>
-                                <button class="btn btn-warning">Edit</button>
-                                <button class="btn btn-danger">Delete</button>
+                                <button class="btn btn-info" onclick="handleTampilkanPolyline(${item.id})">Tampilkan Polyline</button>
+                                <button class="btn btn-warning" onclick="handleEditButtonClick(event)">Edit</button>
+                                <button class="btn btn-danger" onclick="deleteData(${item.id})">Delete</button>
                             </td>
+                            <td>${item.paths}</td>
                         `;
-                        
                         tableBody.appendChild(row);
                     });
                 } else {
@@ -609,11 +598,60 @@
             });
         }
 
-        // Call fetchAndDisplayData initially to populate the table and map
         fetchAndDisplayData();
 
+        function handleTampilkanPolyline(id) {
+            const apiUrl = `https://gisapis.manpits.xyz/api/ruasjalan/${id}`;
+            const headers = {
+                'Authorization': 'Bearer ' + "{{ session('api_token') }}",
+                'Accept': 'application/json'
+            };
 
-        // Function to decode polyline points
+            fetch(apiUrl, { headers: headers })
+                .then(response => response.json())
+                .then(data => {
+                    if (data) {
+                        const item = data.ruasjalan; 
+                        const decodedPath = decodePolyline(item.paths);
+                        
+                        if (polyline) {
+                            mymap.removeLayer(polyline);
+                        }
+                        
+                        polyline = L.polyline(decodedPath).addTo(mymap);
+
+                        const popupContent = `
+                            <strong>ID:</strong> ${item.id}<br>
+                            <strong>Desa:</strong> ${desaMap[item.desa_id] || item.desa_id}<br>
+                            <strong>Nama Ruas:</strong> ${item.nama_ruas}<br>
+                            <strong>Panjang:</strong> ${item.panjang}<br>
+                            <strong>Lebar:</strong> ${item.lebar}<br>
+                            <strong>Eksisting:</strong> ${eksistingMap[item.eksisting_id] || item.eksisting_id}<br>
+                            <strong>Kondisi:</strong> ${kondisiMap[item.kondisi_id] || item.kondisi_id}<br>
+                            <strong>Jenis Jalan:</strong> ${jenisJalanMap[item.jenisjalan_id] || item.jenisjalan_id}<br>
+                            <strong>Keterangan:</strong> ${item.keterangan}
+                        `;
+                        
+                        polyline.bindPopup(popupContent).openPopup();
+
+                        mymap.fitBounds(polyline.getBounds());
+                    } else {
+                        alert('Data tidak ditemukan.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching polyline data:', error);
+                    alert('Terjadi kesalahan saat mengambil data.');
+                });
+        }
+
+        function addPolylineToMap(decodedPath, item) {
+            const polyline = L.polyline(decodedPath).addTo(mymap);
+            mymap.fitBounds(polyline.getBounds());
+
+            return polyline;
+        }
+
         function decodePolyline(encoded) {
             var currentPosition = 0;
             var currentLat = 0;
@@ -653,13 +691,117 @@
             return polyline;
         }
 
-        // Function to add polyline to map
-        function addPolylineToMap(decodedPath) {
-            var polyline = L.polyline(decodedPath, {color: 'blue'}).addTo(mymap);
-            mymap.fitBounds(polyline.getBounds());
+        function deleteData(id) {
+            if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+                const headers = {
+                    'Authorization': 'Bearer ' + "{{ session('api_token') }}",
+                    'Accept': 'application/json'
+                };
+
+                axios.delete(`https://gisapis.manpits.xyz/api/ruasjalan/${id}`, { headers: headers })
+                    .then(response => {
+                        alert('Data berhasil dihapus, silahkan refresh halaman');
+                        removePolylineById(id);
+                        var row = document.getElementById(`row-${id}`);
+                        if (row) {
+                            row.remove();
+                            location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error deleting data:', error);
+                        alert('Terjadi kesalahan saat menghapus data');
+                    });
+            }
         }
 
+        function removePolylineById(id) {
+            var polyline = polylineMap[id];
+            if (polyline) {
+                mymap.removeLayer(polyline);
+                delete polylineMap[id];
+            }
+        }
 
+        function populateForm(data) {
+            document.getElementById("paths").value = data.paths;
+            document.getElementById("desa_id").value = data.desa_id;
+            document.getElementById("kode_ruas").value = data.kode_ruas;
+            document.getElementById("nama_ruas").value = data.nama_ruas;
+            document.getElementById("panjang").value = data.panjang;
+            document.getElementById("lebar").value = data.lebar;
+            document.getElementById("eksisting_id").value = data.eksisting_id;
+            document.getElementById("kondisi_id").value = data.kondisi_id;
+            document.getElementById("jenisjalan_id").value = data.jenisjalan_id;
+            document.getElementById("keterangan").value = data.keterangan;
+        
+            var decodedPath = decodePolyline(data.paths);
+            polylinePoints = decodedPath.map(point => L.latLng(point[0], point[1]));
+            updatePolyline();
+        }
+
+        function handleEditButtonClick(event) {
+            const row = event.target.closest('tr');
+            const data = {
+                id: row.children[0].textContent,
+                desa_id: row.children[1].textContent,
+                kode_ruas: row.children[2].textContent,
+                nama_ruas: row.children[3].textContent,
+                panjang: row.children[4].textContent,
+                lebar: row.children[5].textContent,
+                eksisting_id: row.children[6].textContent,
+                kondisi_id: row.children[7].textContent,
+                jenisjalan_id: row.children[8].textContent,
+                keterangan: row.children[9].textContent,
+                paths: row.children[11].textContent,
+            };
+            
+            populateForm(data);
+
+            document.getElementById("submitRuasJalan").dataset.id = data.id;
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById('ruasjalan-form').addEventListener('submit', async (event) => {
+                event.preventDefault();
+                
+                const id = document.getElementById("submitRuasJalan").dataset.id;
+                const data = {
+                    paths: document.getElementById("paths").value,
+                    desa_id: document.getElementById("desa_id").value,
+                    kode_ruas: document.getElementById("kode_ruas").value,
+                    nama_ruas: document.getElementById("nama_ruas").value,
+                    panjang: document.getElementById("panjang").value,
+                    lebar: document.getElementById("lebar").value,
+                    eksisting_id: document.getElementById("eksisting_id").value,
+                    kondisi_id: document.getElementById("kondisi_id").value,
+                    jenisjalan_id: document.getElementById("jenisjalan_id").value,
+                    keterangan: document.getElementById("keterangan").value,
+                };
+
+                try {
+                    const response = await fetch(`https://gisapis.manpits.xyz/api/ruasjalan/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': 'Bearer ' + "{{ session('api_token') }}",
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (response.ok) {
+                        alert('Data berhasil diperbarui, silahkan refresh halaman');
+                        location.reload(); 
+                        clearForm();
+                    } else {
+                        alert('Gagal memperbarui data.');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Terjadi kesalahan saat memperbarui data.');
+                }
+            });
+        });
     </script>
 </body>
 </html>
